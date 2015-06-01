@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">安装测试</string>
+    <string name="title">Hi :-D</string>
+    <string name="uninstall">卸载</string>
+    <string name="update">安装 or 更新</string>
+    <string name="product">产品名称</string>
+    <string name="type">类型</string>
+    <string name="version">版本</string>
+
+    <string name="toast_not_installed">软件没有安装</string>
+    <string name="toast_no_network">手机没有连接到WIFI</string>
+    <string name="toast_request_error">请求错误</string>
+    <string name="toast_connect_error">网络连接错误</string>
+    <string name="dialog_loading">数据加载中</string>
+    <string name="dialog_downloading">下载中</string>
+    <string name="toast_no_update">没有新版</string>
+    <string name="menu_about">关于</string>
+    <string name="menu_clear">清除下载包</string>
+    <string name="about_version">V %1$s</string>
+    <string name="menu_more">更多</string>
+    <string name="dialog_deleting">删除中</string>
+    <string name="menu_refresh">刷新</string>
+    <string name="toast_delete_successfully">删除成功</string>
+    <string name="toast_no_files">没有文件</string>
+    <string name="toast_reading_dir">目录读取中</string>
+</resources>
