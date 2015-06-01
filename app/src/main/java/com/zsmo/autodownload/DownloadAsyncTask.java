@@ -9,6 +9,7 @@ import android.widget.Toast;
 import com.zsmo.autodownload.ui.MainActivity;
 import com.zsmo.autodownload.utils.FileUtils;
 import com.zsmo.autodownload.utils.PackageUtils;
+import com.zsmo.autodownload.utils.SmbUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -18,56 +19,51 @@ import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import jcifs.smb.SmbFile;
+
 /**
  * 使用async task下载文件
  */
-public class DownloadAsyncTask extends AsyncTask<String, Integer, String> {
+public class DownloadAsyncTask extends AsyncTask<Void, Integer, String> {
 
     private ProgressDialog mDialog;
     private PowerManager.WakeLock mWakeLock;
     private WeakReference<MainActivity> mContext;
-    private String mFullName;
-    private String mPackageName;
+    private String mPath;
 
-    public DownloadAsyncTask(MainActivity context, String fullName, String packageName) {
+    public DownloadAsyncTask(MainActivity context, String path) {
         mContext = new WeakReference<>(context);
-        mFullName = fullName;
-        mPackageName = packageName;
+        mPath = path;
     }
 
     @Override
-    protected String doInBackground(String... params) {
+    protected String doInBackground(Void... params) {
 
         String result = null;
         InputStream in = null;
-        HttpURLConnection connection = null;
         FileOutputStream out = null;
         try {
-            URL url = new URL(params[0]);
-            connection = (HttpURLConnection) url.openConnection();
-            connection.connect();
+            // 活取最新的文件
+            SmbFile file = SmbUtils.readNeweastSmbFile(mPath);
+            if (null != file) {
+                in = file.getInputStream();
+                long fileLength = file.length();
+                String path = FileUtils.getFileDirPath(mContext.get());
+                File outFile = new File(path, file.getName());
+                out = new FileOutputStream(outFile);
 
-            if (HttpURLConnection.HTTP_OK != connection.getResponseCode()) {
-                return null;
-            }
-
-            int fileLength = connection.getContentLength();
-            in = connection.getInputStream();
-            String path = FileUtils.getFileDirPath(mContext.get());
-            File file = new File(path, mFullName);
-            out = new FileOutputStream(file);
-
-            byte[] data = new byte[4096];
-            int count;
-            long total = 0;
-            while (-1 != (count = in.read(data))) {
-                total += count;
-                if (0 < fileLength) {
-                    publishProgress((int)(total * 100 / fileLength));
+                byte[] data = new byte[4096];
+                int count;
+                long total = 0;
+                while (-1 != (count = in.read(data))) {
+                    total += count;
+                    if (0 < fileLength) {
+                        publishProgress((int) (total * 100 / fileLength));
+                    }
+                    out.write(data, 0, count);
                 }
-                out.write(data, 0, count);
+                result = outFile.getAbsolutePath();
             }
-            result = file.getAbsolutePath();
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -77,9 +73,6 @@ public class DownloadAsyncTask extends AsyncTask<String, Integer, String> {
                 }
                 if (null != in) {
                     in.close();
-                }
-                if (null != connection) {
-                    connection.disconnect();
                 }
             } catch (IOException ignored) {
                 // ignore
@@ -107,20 +100,9 @@ public class DownloadAsyncTask extends AsyncTask<String, Integer, String> {
             if (null == result) {
                 Toast.makeText(mContext.get(), R.string.toast_connect_error, Toast.LENGTH_LONG).show();
             } else if (new File(result).exists()) {
-                mContext.get().initDownloadingSig(mPackageName);
                 PackageUtils.installPackage(mContext.get(), result);
             }
         }
-    }
-
-    @Override
-    protected void onCancelled(String s) {
-        super.onCancelled(s);
-    }
-
-    @Override
-    protected void onCancelled() {
-        super.onCancelled();
     }
 
     @Override
