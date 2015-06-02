@@ -8,6 +8,7 @@ import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -23,6 +24,8 @@ import com.zsmo.autodownload.R;
 import com.zsmo.autodownload.utils.NetWorkUtils;
 import com.zsmo.autodownload.utils.PackageUtils;
 import com.zsmo.autodownload.utils.SmbUtils;
+
+import org.w3c.dom.Text;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -68,12 +71,20 @@ public class MainActivity extends BaseActivity {
         }
     };
 
-    private class MySmbFilter implements SmbFileFilter {
+    private class ProductsSmbFilter implements SmbFileFilter {
         @Override
         public boolean accept(SmbFile smbFile) throws SmbException {
             String dirName = smbFile.getName().toLowerCase();
             String name = dirName.substring(0, dirName.length() - 1);
             return MainActivity.sAvailableProductNames.contains(name);
+        }
+    }
+
+    private class DirSmbFilter implements SmbFileFilter {
+
+        @Override
+        public boolean accept(SmbFile smbFile) throws SmbException {
+            return null != smbFile && smbFile.isDirectory();
         }
     }
 
@@ -132,8 +143,10 @@ public class MainActivity extends BaseActivity {
                 } else {
                     String productName = (String) mSpinnerProduct.getSelectedItem();
                     String versionName = (String) mSpinnerVersion.getSelectedItem();
-                    String filePath = Const.SMB_SERVER + '/' + productName + '/' + versionName + '/';
-                    new DownloadAsyncTask(MainActivity.this, filePath).execute();
+                    if (!TextUtils.isEmpty(productName) && !TextUtils.isEmpty(versionName)) {
+                        String filePath = Const.SMB_SERVER + '/' + productName + '/' + versionName + '/';
+                        new DownloadAsyncTask(MainActivity.this, filePath).execute();
+                    }
                 }
 
             }
@@ -153,8 +166,8 @@ public class MainActivity extends BaseActivity {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 String selectedProduct = (String) parent.getSelectedItem();
+                adapterVersions.clear();
                 if (null != mVersionsMap && null != mVersionsMap.get(selectedProduct)) {
-                    adapterVersions.clear();
                     adapterVersions.addAll(mVersionsMap.get(selectedProduct));
                 }
             }
@@ -198,7 +211,7 @@ public class MainActivity extends BaseActivity {
             int versionsResult = 1;
             String smbServer = params[0];
             // 读取顶级目录信息
-            List<String> smbFiles = SmbUtils.readSmbDir(smbServer, new MySmbFilter());
+            List<String> smbFiles = SmbUtils.readSmbDir(smbServer, new ProductsSmbFilter());
             if (!smbFiles.isEmpty()) {
                 mProducts = smbFiles;
                 productsResult = 0;
@@ -206,7 +219,7 @@ public class MainActivity extends BaseActivity {
             // 读取版本信息
             for (String dirName : mProducts) {
                 String smbPath = smbServer + dirName + '/';
-                List<String> paths = SmbUtils.readSmbDir(smbPath, null);
+                List<String> paths = SmbUtils.readSmbDir(smbPath, new DirSmbFilter());
                 if (!paths.isEmpty()) {
                     mVersionsMap.put(dirName, paths);
                 }
