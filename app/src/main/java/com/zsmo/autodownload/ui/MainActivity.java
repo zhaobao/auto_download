@@ -41,6 +41,7 @@ import jcifs.smb.SmbFileFilter;
 
 public class MainActivity extends BaseActivity {
 
+    private static boolean sRefreshing;
     private static Map<String, String> sPackageNameMapping;
     static {
         MainActivity.sPackageNameMapping = new HashMap<>();
@@ -68,7 +69,9 @@ public class MainActivity extends BaseActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (NetWorkUtils.isWifiConnected(context)) {
-                getServerData();
+                if (mProducts.isEmpty()) {
+                    getServerData();
+                }
             }
         }
     };
@@ -202,8 +205,15 @@ public class MainActivity extends BaseActivity {
         @Override
         protected void onPreExecute() {
             if (null != mContext.get()) {
-                mProgressDialog = ProgressDialog.show(mContext.get(), null, getString(R.string.dialog_loading));
+                MainActivity activity = mContext.get();
+                mProgressDialog = ProgressDialog.show(activity, null, getString(R.string.dialog_loading));
                 mProgressDialog.setCancelable(false);
+                if (!mProducts.isEmpty()) {
+                    mProducts.clear();
+                }
+                if (mVersionsMap.isEmpty()) {
+                    mVersionsMap.clear();
+                }
             }
         }
 
@@ -274,6 +284,11 @@ public class MainActivity extends BaseActivity {
                 return true;
             case R.id.menu_clear:
                 startActivity(new Intent(this, ApkListActivity.class));
+                return true;
+            case R.id.menu_refresh_main:
+                if (!MainActivity.sRefreshing) {
+                    getServerData();
+                }
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
