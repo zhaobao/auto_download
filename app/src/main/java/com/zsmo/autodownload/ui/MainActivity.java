@@ -29,6 +29,8 @@ import org.w3c.dom.Text;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -216,10 +218,22 @@ public class MainActivity extends BaseActivity {
                 mProducts = smbFiles;
                 productsResult = 0;
             }
+            Collections.sort(mProducts, new Comparator<String>() {
+                @Override
+                public int compare(String lhs, String rhs) {
+                    return rhs.compareToIgnoreCase(lhs);
+                }
+            });
             // 读取版本信息
             for (String dirName : mProducts) {
                 String smbPath = smbServer + dirName + '/';
                 List<String> paths = SmbUtils.readSmbDir(smbPath, new DirSmbFilter());
+                Collections.sort(paths, new Comparator<String>() {
+                    @Override
+                    public int compare(String lhs, String rhs) {
+                        return rhs.compareToIgnoreCase(lhs);
+                    }
+                });
                 if (!paths.isEmpty()) {
                     mVersionsMap.put(dirName, paths);
                 }
